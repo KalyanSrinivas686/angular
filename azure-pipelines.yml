@@ -8,7 +8,7 @@ pool:
 
 variables:
   buildConfiguration: 'Production'
-  buildDir: 'dist/<your-angular-app-name>' # Replace with your Angular app folder name
+  buildDir: 'dist/browser' # Relative path to the build output directory inside the project
 
 stages:
 - stage: Build
@@ -17,13 +17,13 @@ stages:
   - job: Build
     displayName: Build Angular App
     steps:
-    # Use the correct Node.js version
+    # Use Node.js version 20.0.0
     - task: NodeTool@0
       inputs:
-        versionSpec: '16.x' # Ensure this matches the Node.js version required for Angular
-      displayName: Use Node.js
+        versionSpec: '20.0.0' # Updated to Node.js 20.0.0
+      displayName: Use Node.js 20.0.0
 
-    # Environment validation
+    # Validate environment
     - script: |
         set -eux
         echo "Verifying environment..."
@@ -76,7 +76,7 @@ stages:
     # Deploy build artifacts to Azure App Service
     - task: AzureWebApp@1
       inputs:
-        azureSubscription: 'serviceconnection' # Replace with your Azure service connection name
+        azureSubscription: 'azure@serviceconnection123' # Replace with your Azure service connection name
         appType: 'webAppLinux' # Change to 'webAppWindows' if using Windows App Services
         appName: 'nextopswebappservices' # Replace with your Azure Web App name
         package: $(Pipeline.Workspace)/angular-app
