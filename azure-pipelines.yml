@@ -23,16 +23,32 @@ stages:
       displayName: Use Node.js
 
     - script: |
-        npm install -g @angular/cli
-        npm install
-        ng build --configuration $(buildConfiguration)
-      displayName: Install Dependencies and Build Angular App
+        set -x
+        echo "Installing Angular CLI globally..."
+        npm install -g @angular/cli || exit 3
+        echo "Installing project dependencies..."
+        npm install || exit 3
+        echo "Building Angular application..."
+        ng build --configuration $(buildConfiguration) || exit 3
+
+        echo "Validating build output directory..."
+        if [ ! -d "$(System.DefaultWorkingDirectory)/$(buildDir)" ]; then
+          echo "Error: Build output directory does not exist."
+          exit 3
+        fi
+      displayName: Install and Build Angular App
+
+    - script: |
+        echo "Listing build output directory contents:"
+        ls -la $(System.DefaultWorkingDirectory)/$(buildDir)
+      displayName: Verify Build Output
 
     - task: PublishPipelineArtifact@1
       inputs:
         targetPath: $(System.DefaultWorkingDirectory)/$(buildDir)
         artifact: angular-app
         publishLocation: pipeline
+      displayName: Publish Build Artifacts
 
 - stage: Deploy
   displayName: Deploy to Azure App Service
@@ -47,3 +63,4 @@ stages:
         appType: 'webAppLinux' # Use 'webAppWindows' if your app is on a Windows App Service
         appName: 'nextopswebappservices' # Replace with your Azure Web App name
         package: $(Pipeline.Workspace)/angular-app
+      displayName: Deploy Application to Azure
