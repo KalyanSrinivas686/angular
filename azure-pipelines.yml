@@ -1,7 +1,7 @@
 trigger:
   branches:
     include:
-      - main # Replace with your branch name
+      - main # Replace with your branch name if different
 
 pool:
   vmImage: 'ubuntu-latest'
@@ -17,32 +17,48 @@ stages:
   - job: Build
     displayName: Build Angular App
     steps:
+    # Use the correct Node.js version
     - task: NodeTool@0
       inputs:
         versionSpec: '16.x' # Ensure this matches the Node.js version required for Angular
       displayName: Use Node.js
 
+    # Environment validation
     - script: |
-        set -x
+        set -eux
+        echo "Verifying environment..."
+        echo "Node.js Version:"
+        node -v
+        echo "NPM Version:"
+        npm -v
         echo "Installing Angular CLI globally..."
-        npm install -g @angular/cli || exit 3
-        echo "Installing project dependencies..."
-        npm install || exit 3
-        echo "Building Angular application..."
-        ng build --configuration $(buildConfiguration) || exit 3
+        npm install -g @angular/cli
+      displayName: Validate Environment
 
+    # Install dependencies and build the application
+    - script: |
+        set -eux
+        echo "Installing project dependencies..."
+        rm -rf node_modules
+        npm install
+        
+        echo "Building Angular application..."
+        ng build --configuration $(buildConfiguration)
+        
         echo "Validating build output directory..."
         if [ ! -d "$(System.DefaultWorkingDirectory)/$(buildDir)" ]; then
-          echo "Error: Build output directory does not exist."
+          echo "Error: Build output directory $(buildDir) does not exist."
           exit 3
         fi
       displayName: Install and Build Angular App
 
+    # Verify build output directory contents
     - script: |
         echo "Listing build output directory contents:"
         ls -la $(System.DefaultWorkingDirectory)/$(buildDir)
       displayName: Verify Build Output
 
+    # Publish build artifacts
     - task: PublishPipelineArtifact@1
       inputs:
         targetPath: $(System.DefaultWorkingDirectory)/$(buildDir)
@@ -57,10 +73,11 @@ stages:
   - job: Deploy
     displayName: Deploy Angular App to Azure
     steps:
+    # Deploy build artifacts to Azure App Service
     - task: AzureWebApp@1
       inputs:
         azureSubscription: 'serviceconnection' # Replace with your Azure service connection name
-        appType: 'webAppLinux' # Use 'webAppWindows' if your app is on a Windows App Service
+        appType: 'webAppLinux' # Change to 'webAppWindows' if using Windows App Services
         appName: 'nextopswebappservices' # Replace with your Azure Web App name
         package: $(Pipeline.Workspace)/angular-app
       displayName: Deploy Application to Azure
