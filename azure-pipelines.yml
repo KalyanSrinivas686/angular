@@ -8,7 +8,7 @@ pool:
 
 variables:
   buildConfiguration: 'Production'
-  buildDir: 'dist/browser' # Relative path to the build output directory inside the project
+  buildDir: 'D:\Angular\dist\browser' # Relative path to the build output directory inside the project
 
 stages:
 - stage: Build
